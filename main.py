@@ -1,6 +1,9 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
+import os
 import tensorflow as tf
+
+import loadData
 
 tf.enable_eager_execution()
 
@@ -9,9 +12,6 @@ config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
 sess = tf.Session(config=config)
 
-import loadData
-
-AUTOTUNE = tf.data.experimental.AUTOTUNE
 LABEL_COUNT = 1108
 BATCH_SIZE = 10
 BUFFER_SIZE = 1
@@ -32,7 +32,6 @@ def make_tf_dataset(x, y):
     ds = ds.apply(
         tf.data.experimental.shuffle_and_repeat(buffer_size=BUFFER_SIZE))
     ds = ds.batch(BATCH_SIZE)
-    ds = ds.prefetch(buffer_size=AUTOTUNE)
     return ds
 
 
@@ -43,30 +42,62 @@ label_names = [str(label) for label in range(LABEL_COUNT)]
 train_ds = make_tf_dataset(x_train, y_train)
 test_ds = make_tf_dataset(x_test, y_test)
 
-# model = tf.keras.applications.inception_resnet_v2.InceptionResNetV2(include_top=True,
-#                                                                     weights=None,
-#                                                                     input_tensor=None,
-#                                                                     input_shape=(512, 512, 1),
-#                                                                     pooling='avg',
-#                                                                     classes=LABEL_COUNT)
+model_path = 'models/myModel'
+if os.path.isfile(model_path):
+    model = tf.keras.models.load_model(model_path)
+else:
+    # model = tf.keras.applications.inception_resnet_v2.InceptionResNetV2(include_top=True,
+    #                                                                     weights=None,
+    #                                                                     input_tensor=None,
+    #                                                                     input_shape=(512, 512, 1),
+    #                                                                     classes=LABEL_COUNT)
 
-model = tf.keras.applications.mobilenet.MobileNet(include_top=True,
-                                                  weights=None,
-                                                  input_tensor=None,
-                                                  input_shape=(IMAGE_SIZE, IMAGE_SIZE, 1),
-                                                  classes=LABEL_COUNT)
+    model = tf.keras.applications.mobilenet.MobileNet(include_top=True,
+                                                      weights=None,
+                                                      input_tensor=None,
+                                                      input_shape=(IMAGE_SIZE, IMAGE_SIZE, 1),
+                                                      classes=LABEL_COUNT)
 
-model.compile(optimizer='adam',
-              loss='sparse_categorical_crossentropy',
-              metrics=['accuracy'])
+    model.compile(optimizer='adam',
+                  loss='sparse_categorical_crossentropy',
+                  metrics=['accuracy'])
 
-callbacks = [tf.keras.callbacks.ModelCheckpoint('./mdoel.h5', verbose=1),
+result = model.evaluate(test_ds,
+                        steps=int(len(x_test)/BATCH_SIZE))
+accuracy = result[1]
+
+
+class SaveModel(tf.keras.callbacks.Callback):
+    def on_epoch_end(self, epoch, logs=None):
+        global model, accuracy
+        if logs is None:
+            print('no logs :(')
+            return
+        val_acc = float(logs.get('val_acc'))
+        print('validation accuracy is ' + str(val_acc))
+        if accuracy < val_acc:
+            print('improvments')
+            if os.path.isfile(model_path):
+                tf.keras.models.save_model(
+                    model,
+                    model_path,
+                    overwrite=True,
+                    include_optimizer=True)
+            else:
+                tf.keras.models.save_model(
+                    model,
+                    model_path,
+                    overwrite=True,
+                    include_optimizer=True)
+            accuracy = val_acc
+
+
+callbacks = [SaveModel(),
              tf.keras.callbacks.TensorBoard()]
 
 model.fit(train_ds,
-          epochs=200,
+          epochs=20,
           steps_per_epoch=int(len(x_train)/BATCH_SIZE),
           validation_data=test_ds,
           validation_steps=int(len(x_test)/BATCH_SIZE),
           callbacks=callbacks)
-# model.evaluate(test_ds)
