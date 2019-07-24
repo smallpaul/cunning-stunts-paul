@@ -74,9 +74,7 @@ class SaveModel(tf.keras.callbacks.Callback):
             print('no logs :(')
             return
         val_acc = float(logs.get('val_acc'))
-        print('validation accuracy is ' + str(val_acc))
         if accuracy < val_acc:
-            print('improvments')
             if os.path.isfile(model_path):
                 tf.keras.models.save_model(
                     model,
@@ -93,7 +91,7 @@ class SaveModel(tf.keras.callbacks.Callback):
 
 
 callbacks = [SaveModel(),
-             tf.keras.callbacks.TensorBoard()]
+             tf.keras.callbacks.TensorBoard(update_freq='batch')]
 
 model.fit(train_ds,
           epochs=20,
