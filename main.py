@@ -14,7 +14,7 @@ sess = tf.Session(config=config)
 
 LABEL_COUNT = 1108
 BATCH_SIZE = 10
-BUFFER_SIZE = 1
+BUFFER_SIZE = 2
 IMAGE_SIZE = 256
 
 
@@ -43,6 +43,7 @@ train_ds = make_tf_dataset(x_train, y_train)
 test_ds = make_tf_dataset(x_test, y_test)
 
 model_path = 'models/myModel'
+new_net = False
 if os.path.isfile(model_path):
     model = tf.keras.models.load_model(model_path)
 else:
@@ -61,10 +62,13 @@ else:
     model.compile(optimizer='adam',
                   loss='sparse_categorical_crossentropy',
                   metrics=['accuracy'])
+    new_net = True
 
-result = model.evaluate(test_ds,
-                        steps=int(len(x_test)/BATCH_SIZE))
-accuracy = result[1]
+accuracy = 0
+if not new_net:
+    result = model.evaluate(test_ds,
+                            steps=int(len(x_test)/BATCH_SIZE))
+    accuracy = result[1]
 
 
 class SaveModel(tf.keras.callbacks.Callback):
@@ -75,7 +79,7 @@ class SaveModel(tf.keras.callbacks.Callback):
             return
         val_acc = float(logs.get('val_acc'))
         if accuracy < val_acc:
-            print('saving model')
+            print('Saving network')
             if os.path.isfile(model_path):
                 tf.keras.models.save_model(
                     model,
@@ -91,8 +95,8 @@ class SaveModel(tf.keras.callbacks.Callback):
             accuracy = val_acc
 
 
-callbacks = [SaveModel(),
-             tf.keras.callbacks.TensorBoard(update_freq='batch')]
+callbacks = [tf.keras.callbacks.TensorBoard(update_freq='batch'),
+             SaveModel()]
 
 model.fit(train_ds,
           epochs=20,
