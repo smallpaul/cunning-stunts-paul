@@ -75,6 +75,7 @@ class SaveModel(tf.keras.callbacks.Callback):
             return
         val_acc = float(logs.get('val_acc'))
         if accuracy < val_acc:
+            print('saving model')
             if os.path.isfile(model_path):
                 tf.keras.models.save_model(
                     model,

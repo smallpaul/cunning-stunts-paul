@@ -3,26 +3,38 @@ import numpy as np
 import random as rand
 import pathlib
 
-train_location = '/home/paul/PycharmProjects/recursion-cellular-image-classification/train.csv'
-data_location = '/home/paul/PycharmProjects/recursion-cellular-image-classification/train/'
-data = []
+train_target_location = '/home/paul/PycharmProjects/recursion-cellular-image-classification/train.csv'
+train_data_location = '/home/paul/PycharmProjects/recursion-cellular-image-classification/train/'
+test_target_location = '/home/paul/PycharmProjects/recursion-cellular-image-classification/test_controls.csv'
+test_data_location = '/home/paul/PycharmProjects/recursion-cellular-image-classification/test/'
+#data = []
 train_data = []
 test_data = []
 current_index = 0
 
 
 def load_data():
-    global data
-    with open(train_location) as csv_file:
+    global train_data, test_data
+    with open(train_target_location) as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',')
         first_line = True
-        train_mat = []
+        data_mat = []
         for row in csv_reader:
             if first_line:
                 first_line = False
             else:
-                train_mat = train_mat + [row]
-    data = train_mat
+                data_mat = data_mat + [row]
+    train_data = data_mat
+    with open(test_target_location) as csv_file:
+        csv_reader = csv.reader(csv_file, delimiter=',')
+        first_line = True
+        data_mat = []
+        for row in csv_reader:
+            if first_line:
+                first_line = False
+            else:
+                data_mat = data_mat + [row]
+    test_data = data_mat
 
 
 def configure_unsequenced():
@@ -39,34 +51,42 @@ def configure_unsequenced():
 
 
 def get_unsequenced_data():
-    if len(data) == 0:
-        load_data()
     if len(train_data) == 0:
-        configure_unsequenced()
+        load_data()
+    # if len(train_data) == 0:
+    #     configure_unsequenced()
     x = []
     y = []
     for row in train_data:
         y.append(int(row[4]))
+        y.append(int(row[4]))
         week_num_index = row[0].index('_')
         image_name = row[3] + '_s1_w' + row[0][week_num_index+1:week_num_index+2] + '.png'
-        path = data_location + row[1] + '/Plate' + row[2] + '/' + image_name
+        path = train_data_location + row[1] + '/Plate' + row[2] + '/' + image_name
+        x.append(path)
+        image_name = row[3] + '_s2_w' + row[0][week_num_index+1:week_num_index+2] + '.png'
+        path = train_data_location + row[1] + '/Plate' + row[2] + '/' + image_name
         x.append(path)
 
     return x, y
 
 
 def get_unsequenced_test():
-    if len(data) == 0:
-        load_data()
     if len(test_data) == 0:
-        configure_unsequenced()
+        load_data()
+    # if len(test_data) == 0:
+    #     configure_unsequenced()
     x = []
     y = []
     for row in test_data:
         y.append(int(row[4]))
+        y.append(int(row[4]))
         week_num_index = row[0].index('_')
         image_name = row[3] + '_s1_w' + row[0][week_num_index+1:week_num_index+2] + '.png'
-        path = data_location + row[1] + '/Plate' + row[2] + '/' + image_name
+        path = test_data_location + row[1] + '/Plate' + row[2] + '/' + image_name
+        x.append(path)
+        image_name = row[3] + '_s2_w' + row[0][week_num_index+1:week_num_index+2] + '.png'
+        path = test_data_location + row[1] + '/Plate' + row[2] + '/' + image_name
         x.append(path)
 
     return x, y
