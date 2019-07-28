@@ -27,9 +27,9 @@ def load_data():
 
 def configure_unsequenced():
     global train_data, test_data
-    tain_denominator = 5 # 5 is 80%
+    train_denominator = 20 # 1/20 is 0.05 so 5% of the data is going to be used for validation
     for index, row in enumerate(data):
-        if index % tain_denominator is not 0: # use mode to get an even spread of test and training data
+        if index % train_denominator is not 0: # use mode to get an even spread of test and training data
             train_data.append(row)
         else:
             test_data.append(row)
